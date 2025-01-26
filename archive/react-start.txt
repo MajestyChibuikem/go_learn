@@ -1,0 +1,196 @@
+# Project Initialization
+```bash
+npx create-react-app academic-tutorial-platform_frontend --template typescript
+cd academic-tutorial-platform
+
+# Additional dependencies
+npm install \
+  axios \
+  react-router-dom \
+  @reduxjs/toolkit \
+  react-redux \
+  @mui/material \
+  @emotion/react \
+  @emotion/styled
+```
+
+# Project Structure
+```
+academic-tutorial-platform/
+│
+├── public/
+│   ├── index.html
+│   └── favicon.ico
+│
+├── src/
+│   ├── components/
+│   │   ├── auth/
+│   │   │   ├── Login.tsx
+│   │   │   ├── Register.tsx
+│   │   │   └── PasswordReset.tsx
+│   │   ├── tutorials/
+│   │   │   ├── TutorialList.tsx
+│   │   │   ├── TutorialUpload.tsx
+│   │   │   └── TutorialPlayer.tsx
+│   │   └── common/
+│   │       ├── Header.tsx
+│   │       └── Footer.tsx
+│   │
+│   ├── pages/
+│   │   ├── HomePage.tsx
+│   │   ├── DashboardPage.tsx
+│   │   ├── AuthPage.tsx
+│   │   └── TutorialsPage.tsx
+│   │
+│   ├── services/
+│   │   ├── api.ts
+│   │   ├── authService.ts
+│   │   └── tutorialService.ts
+│   │
+│   ├── store/
+│   │   ├── index.ts
+│   │   ├── authSlice.ts
+│   │   └── tutorialsSlice.ts
+│   │
+│   ├── types/
+│   │   ├── User.ts
+│   │   └── Tutorial.ts
+│   │
+│   ├── utils/
+│   │   ├── validation.ts
+│   │   └── formatters.ts
+│   │
+│   ├── App.tsx
+│   ├── index.tsx
+│   └── routes.tsx
+│
+├── tsconfig.json
+├── package.json
+└── README.md
+```
+
+# Basic Redux Store Configuration (src/store/index.ts)
+```typescript
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice';
+import tutorialsReducer from './tutorialsSlice';
+
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    tutorials: tutorialsReducer
+  }
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+# Authentication Slice (src/store/authSlice.ts)
+```typescript
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface User {
+  id: string;
+  email: string;
+  userType: 'student' | 'tutor' | 'admin';
+}
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+}
+
+const initialState: AuthState = {
+  user: null,
+  token: localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('token')
+};
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    setCredentials: (state, action: PayloadAction<{user: User, token: string}>) => {
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
+      state.isAuthenticated = true;
+      localStorage.setItem('token', token);
+    },
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('token');
+    }
+  }
+});
+
+export const { setCredentials, logout } = authSlice.actions;
+export default authSlice.reducer;
+```
+
+# API Service (src/services/api.ts)
+```typescript
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Add a request interceptor to include token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+```
+
+# Basic Routes (src/routes.tsx)
+```typescript
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import PrivateRoute from './components/common/PrivateRoute';
+import HomePage from './pages/HomePage';
+import AuthPage from './pages/AuthPage';
+import DashboardPage from './pages/DashboardPage';
+import TutorialsPage from './pages/TutorialsPage';
+
+const AppRoutes: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <DashboardPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/tutorials" 
+          element={
+            <PrivateRoute>
+              <TutorialsPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default AppRoutes;
+```
