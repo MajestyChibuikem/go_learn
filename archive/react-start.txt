@@ -13,6 +13,8 @@ npm install \
   @emotion/react \
   @emotion/styled
 ```
+git config --global user.email "majestychibuikem@gmail.com"
+git config --global user.name "majesty"
 
 # Project Structure
 ```
