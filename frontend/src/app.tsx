@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks'
 import preactLogo from './assets/preact.svg'
 import viteLogo from '/vite.svg'
+import { Button } from "@mui/material";
 import './app.css'
 
 export function App() {
@@ -25,6 +26,11 @@ export function App() {
           Edit <code>src/app.tsx</code> and save to test HMR
         </p>
       </div>
+      <div>
+      <Button variant="contained" color="primary">
+        Click Me
+      </Button>
+    </div>
       <p>
         Check out{' '}
         <a
